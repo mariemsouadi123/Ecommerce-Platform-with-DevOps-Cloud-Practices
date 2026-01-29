@@ -1,0 +1,14 @@
+backend:
+  image:
+    repository: mariemsouadi12189/project-backend
+    tag: "3"
+
+frontend:
+  image:
+    repository: mariemsouadi12189/project-frontend
+    tag: "3"
+
+mysql:
+  image:
+    repository: mysql
+    tag: "8.0"

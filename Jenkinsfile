@@ -5,7 +5,6 @@ pipeline {
         DOCKERHUB_USER = "mariemsouadi12189"
         FRONTEND_IMAGE = "project-frontend"
         BACKEND_IMAGE  = "project-backend"
-        REGISTRY       = "docker.io"
     }
 
     stages {
@@ -51,10 +50,8 @@ pipeline {
                     sh """
                         echo \$DOCKER_PASS | docker login -u \$DOCKER_USER --password-stdin
 
-                        docker tag ${DOCKERHUB_USER}/${FRONTEND_IMAGE}:${BUILD_NUMBER} \
-                                   ${DOCKERHUB_USER}/${FRONTEND_IMAGE}:latest
-                        docker tag ${DOCKERHUB_USER}/${BACKEND_IMAGE}:${BUILD_NUMBER} \
-                                   ${DOCKERHUB_USER}/${BACKEND_IMAGE}:latest
+                        docker tag ${DOCKERHUB_USER}/${FRONTEND_IMAGE}:${BUILD_NUMBER} ${DOCKERHUB_USER}/${FRONTEND_IMAGE}:latest
+                        docker tag ${DOCKERHUB_USER}/${BACKEND_IMAGE}:${BUILD_NUMBER} ${DOCKERHUB_USER}/${BACKEND_IMAGE}:latest
 
                         docker push ${DOCKERHUB_USER}/${FRONTEND_IMAGE}:${BUILD_NUMBER}
                         docker push ${DOCKERHUB_USER}/${FRONTEND_IMAGE}:latest
@@ -66,7 +63,7 @@ pipeline {
             }
         }
 
-        stage("Deploy to Kubernetes with Helm") {
+        stage("Deploy to Kubernetes (kubectl)") {
             steps {
                 withCredentials([
                     file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_FILE')
@@ -74,11 +71,12 @@ pipeline {
                     sh """
                         export KUBECONFIG=\$KUBECONFIG_FILE
 
-                        helm upgrade --install ecommerce ./helm \
-                          --set frontend.image.repository=${DOCKERHUB_USER}/${FRONTEND_IMAGE} \
-                          --set frontend.image.tag=${BUILD_NUMBER} \
-                          --set backend.image.repository=${DOCKERHUB_USER}/${BACKEND_IMAGE} \
-                          --set backend.image.tag=${BUILD_NUMBER}
+                        kubectl apply -f k8s/mysql.yaml
+                        kubectl apply -f k8s/backend.yaml
+                        kubectl apply -f k8s/frontend.yaml
+
+                        kubectl rollout status deployment/backend
+                        kubectl rollout status deployment/frontend
                     """
                 }
             }
@@ -87,10 +85,11 @@ pipeline {
 
     post {
         success {
-            echo "✅ Deployment successful!"
+            echo "✅ pipeline successful!"
         }
         failure {
-            echo "❌ Deployment failed!"
+            echo "❌ pipeline failed!"
         }
     }
 }
+
