@@ -75,8 +75,8 @@ pipeline {
                         kubectl apply -f k8s/backend.yaml
                         kubectl apply -f k8s/frontend.yaml
 
-                        kubectl rollout status deployment/backend
-                        kubectl rollout status deployment/frontend
+                        kubectl rollout status deployment/backend  -n ecommerce
+                        kubectl rollout status deployment/frontend -n ecommerce
                     """
                 }
             }
